@@ -2,7 +2,7 @@
 
 ## Installation
 
-Requires [Node.js](https://nodejs.org/) v14+ to run.
+Requires [Node.js](npm) v14+ to run.
 
 Install the dependencies.
 
@@ -21,5 +21,5 @@ npx cypress run --browser=chrome
 ```
 
 ## Observe test run results in CI
-[![N|BuildStatus](https://iili.io/QOkZWQ.png)](https://freeimage.host/i/QOkZWQ)
 
+[![N|BuildStatus](https://iili.io/QOkZWQ.png)](https://freeimage.host/i/QOkZWQ)
