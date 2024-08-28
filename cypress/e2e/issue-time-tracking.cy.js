@@ -1,160 +1,119 @@
 describe('Time Tracking Functionalities: Time Estimation & Time Logging', () => {
     beforeEach(() => {
-        cy.visit('/');
-        cy.url().should('eq', `${Cypress.env('baseUrl')}project/board`).then((url) => {
-            cy.visit(url + '/board');
-        });
+        cy.visit('/project/board');
+        cy.contains('This is an issue of type: Task.').click();  // Open the issue
     });
 
-    const getIssueDetailsModal = () => cy.get('[data-testid="modal:issue-details"]');
-    const getTimeEstimationField = () => cy.get('input[placeholder="Number"]').first();
-    const getTimeSpentField = () => cy.get('input[placeholder="Number"]').eq(0);
-    const getTimeRemainingField = () => cy.get('input[placeholder="Number"]').eq(0);
-    const getStopwatchIcon = () => cy.get('[data-testid="icon:stopwatch"]');
-    const getCloseIcon = () => cy.get('[data-testid="icon:close"]').first();
-    const getDoneButton = () => cy.contains('button', 'Done');
+    // Helper functions to get elements
+    const getIssueDetailsModal = () => cy.get('[data-testid="modal:issue-details"]').should('be.visible');
+    const getTimeEstimationField = () => cy.get('input[placeholder="Number"].sc-dxgOiQ.HrhWu');
 
+    import 'cypress-wait-until';
+
+    // Wait until the Time Spent field is present and visible
+    cy.waitUntil(() =>
+        cy.get('input[placeholder="Number"].sc-dxgOiQ.HrhWu').eq(0)
+            .should('exist')
+            .and('be.visible')
+    );
+
+    // Wait until the Time Remaining field is present and visible
+    cy.waitUntil(() =>
+        cy.get('input[placeholder="Number"].sc-dxgOiQ.HrhWu').eq(1)
+            .should('exist')
+            .and('be.visible')
+    );
+
+    const getTimeTrackingSection = () => cy.get('.sc-gHboQg.cTinVM').should('exist').and('be.visible');
+    const getStopwatchIcon = () => cy.get('[data-testid="icon:stopwatch"]').should('exist').and('be.visible');
+    const getDoneButton = () => cy.get('button.sc-bwzfXH.dIxFno').contains('Done').should('exist').and('be.visible'); // Adjusted selector for Done button
+
+    // Test case for adding, editing, and removing time estimation
     it('Should add, edit, and remove time estimation successfully', () => {
-        const initialEstimation = "8";
-        const updatedEstimation = "10";
+        const initialEstimation = "10";
+        const updatedEstimation = "20";
 
-        cy.contains('This is an issue of type: Task.').click();
-
-        // Log the state of the DOM after clicking the issue
-        cy.wait(1000);
-        cy.get('body').then(($body) => {
-            cy.log($body.html());
-            if ($body.find('[data-testid="modal:issue-details"]').length > 0) {
-                cy.log('Modal found in DOM.');
-                getIssueDetailsModal().should('be.visible');
-            } else {
-                cy.log('Modal not found.');
-            }
-        });
-
-        // Proceed only if the modal is visible
-        getIssueDetailsModal().should('be.visible');
-        cy.wait(1000);
-
-        cy.get('input[placeholder="Number"]').then($els => {
-            cy.log('Number of elements with placeholder "Number":', $els.length);
-        });
-
+        // Step 1: Add Estimation
         getIssueDetailsModal().within(() => {
-            getTimeEstimationField().clear({ force: true });
-            cy.wait(1000);
-            getTimeEstimationField().type(initialEstimation, { force: true });
-            cy.wait(1000);
-            getCloseIcon().click({ force: true });
+            getTimeTrackingSection().should('exist').and('be.visible');
+            getTimeEstimationField().clear({ force: true }).type(initialEstimation, { force: true });
+            cy.wait(1000);  // Wait to ensure the estimation is saved
         });
 
-        cy.wait(1000);
-        cy.contains('This is an issue of type: Task.').click();
-        getIssueDetailsModal().should('be.visible');
-        cy.wait(1000);
+        // Step 2: Validate the added estimation
+        cy.reload();
         getIssueDetailsModal().within(() => {
             getTimeEstimationField().should('have.value', initialEstimation);
         });
 
+        // Step 3: Edit Estimation
         getIssueDetailsModal().within(() => {
-            getTimeEstimationField().clear({ force: true });
-            cy.wait(1000);
-            getTimeEstimationField().type(updatedEstimation, { force: true });
-            cy.wait(1000);
-            getCloseIcon().click({ force: true });
+            getTimeEstimationField().clear({ force: true }).type(updatedEstimation, { force: true });
+            cy.wait(1000);  // Wait to ensure the estimation is saved
         });
 
-        cy.wait(1000);
-        cy.contains('This is an issue of type: Task.').click();
-        getIssueDetailsModal().should('be.visible');
-        cy.wait(1000);
+        // Step 4: Validate the updated estimation
+        cy.reload();
         getIssueDetailsModal().within(() => {
             getTimeEstimationField().should('have.value', updatedEstimation);
         });
 
+        // Step 5: Remove Estimation
         getIssueDetailsModal().within(() => {
             getTimeEstimationField().clear({ force: true });
-            cy.wait(1000);
-            getTimeEstimationField().should('have.value', '');
-            getCloseIcon().click({ force: true });
+            cy.wait(1000);  // Wait to ensure the estimation is removed
         });
 
-        cy.wait(1000);
-        cy.contains('This is an issue of type: Task.').click();
-        getIssueDetailsModal().should('be.visible');
-        cy.wait(1000);
+        // Step 6: Validate the estimation is removed
+        cy.reload();
         getIssueDetailsModal().within(() => {
             getTimeEstimationField().should('have.value', '');
         });
     });
 
+    // Test case for logging time and removing logged time
     it('Should log time and remove logged time successfully', () => {
         const timeSpent = "2";
         const timeRemaining = "5";
 
-        cy.contains('This is an issue of type: Task.').click();
-
-        // Log the state of the DOM after clicking the issue
-        cy.wait(1000);
-        cy.get('body').then(($body) => {
-            cy.log($body.html());
-            if ($body.find('[data-testid="modal:issue-details"]').length > 0) {
-                cy.log('Modal found in DOM.');
-                getIssueDetailsModal().should('be.visible');
-            } else {
-                cy.log('Modal not found.');
-            }
-        });
-
-        // Proceed only if the modal is visible
-        getIssueDetailsModal().should('be.visible');
-        cy.wait(1000);
-
-        cy.get('input[placeholder="Number"]').then($els => {
-            cy.log('Number of elements with placeholder "Number":', $els.length);
-        });
-
+        // Step 1: Log Time
         getIssueDetailsModal().within(() => {
             getStopwatchIcon().click();
-            cy.wait(1000);
+            cy.wait(1000);  // Ensure the time fields are loaded
+
+            // Log the number of input fields and their indices
+            cy.get('input[placeholder="Number"]').then($inputs => {
+                cy.log('Number of input fields with placeholder "Number":', $inputs.length);
+                $inputs.each((index, input) => {
+                    cy.log(`Input at index ${index} has value: ${input.value}`);
+                });
+            });
+
+            getTimeSpentField().clear({ force: true }).type(timeSpent, { force: true });
+            getTimeRemainingField().clear({ force: true }).type(timeRemaining, { force: true });
+            getDoneButton().click({ force: true });
+        });
+
+        // Step 2: Validate the logged time
+        cy.reload();
+        getIssueDetailsModal().within(() => {
+            getTimeTrackingSection().should('contain', `${timeSpent}h logged`).and('contain', `${timeRemaining}h remaining`);
+        });
+
+        // Step 3: Remove Logged Time
+        getIssueDetailsModal().within(() => {
+            getStopwatchIcon().click();
+            cy.wait(1000);  // Ensure the time fields are loaded
             getTimeSpentField().clear({ force: true });
-            cy.wait(1000);
-            getTimeSpentField().type(timeSpent, { force: true });
-            cy.wait(1000);
+
             getTimeRemainingField().clear({ force: true });
-            cy.wait(1000);
-            getTimeRemainingField().type(timeRemaining, { force: true });
-            cy.get('button').contains('Done').click({ force: true });
+            getDoneButton().click({ force: true });
         });
 
-        cy.wait(1000);
-        cy.contains('This is an issue of type: Task.').click();
-        getIssueDetailsModal().should('be.visible');
-        cy.wait(1000);
+        // Step 4: Validate the logged time is removed
+        cy.reload();
         getIssueDetailsModal().within(() => {
-            getStopwatchIcon().click();
-            getTimeSpentField().should('have.value', timeSpent);
-            getTimeRemainingField().should('have.value', timeRemaining);
-        });
-
-        getIssueDetailsModal().within(() => {
-            getStopwatchIcon().click();
-            cy.wait(1000);
-            getTimeSpentField().clear({ force: true });
-            getTimeSpentField().should('have.value', '');
-            cy.wait(1000);
-            getTimeRemainingField().clear({ force: true });
-            getTimeRemainingField().should('have.value', '');
-            getDoneButton().should('be.visible').click({ force: true });
-        });
-
-        cy.wait(1000);
-        cy.contains('This is an issue of type: Task.').click();
-        getIssueDetailsModal().should('be.visible');
-        cy.wait(1000);
-        getIssueDetailsModal().within(() => {
-            getTimeSpentField().should('have.value', '');
-            getTimeRemainingField().should('have.value', '');
+            getTimeTrackingSection().should('not.contain', `${timeSpent}h logged`).and('contain', 'Original Estimate');
         });
     });
 });
