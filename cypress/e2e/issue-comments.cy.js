@@ -1,4 +1,4 @@
-describe('Issue comments creating, editing and deleting', () => {
+describe('Comprehensive Test: Create, Edit, and Delete a Comment', () => {
     beforeEach(() => {
         cy.visit('/');
         cy.url().should('eq', `${Cypress.env('baseUrl')}project/board`).then((url) => {
@@ -7,29 +7,71 @@ describe('Issue comments creating, editing and deleting', () => {
         });
     });
 
+    // Helper functions
     const getIssueDetailsModal = () => cy.get('[data-testid="modal:issue-details"]');
+    const getCommentInsertionField = () => cy.get('textarea[placeholder="Add a comment..."]');
+    const getSavedCommentField = () => cy.get('[data-testid="issue-comment"]');
+    const getSaveButton = () => cy.contains('button', 'Save');
+    const getDeleteButton = () => cy.contains('button', 'Delete');
+    const getDeletionConfirmationModal = () => cy.get('[data-testid="modal:confirm"]');
 
-    it('Should create a comment successfully', () => {
-        const comment = 'TEST_COMMENT';
+    it('Should create, edit, and delete the edited comment successfully and verify its removal', () => {
+        const initialComment = "This comprehensive test begins with Ingas added comment";
+        const updatedComment = "This comprehensive test continues with Ingas edited comment";
 
+        // Step 1: Add a comment
         getIssueDetailsModal().within(() => {
-            cy.contains('Add a comment...')
-                .click();
+            cy.contains('Add a comment...').click();
+            cy.get('textarea[placeholder="Add a comment..."]').type(initialComment);
+            cy.contains('button', 'Save').click().should('not.exist');
 
-            cy.get('textarea[placeholder="Add a comment..."]').type(comment);
+            // Step 2: Assert that the comment has been added and is visible
+            cy.contains('Add a comment...').should('exist');
+            cy.get('[data-testid="issue-comment"]').should('contain', initialComment);
+
+            // Step 3: Edit the added comment
+            cy.get('[data-testid="issue-comment"]')
+                .contains(initialComment)
+                .parent()
+                .within(() => {
+                    cy.contains('Edit').click();
+                });
+
+            cy.get('textarea[placeholder="Add a comment..."]')
+                .clear()
+                .type(updatedComment);
 
             cy.contains('button', 'Save')
                 .click()
                 .should('not.exist');
 
-            cy.contains('Add a comment...').should('exist');
-            cy.get('[data-testid="issue-comment"]').should('contain', comment);
+            // Step 4: Assert that the updated comment is visible
+            cy.get('[data-testid="issue-comment"]').should('contain', updatedComment);
         });
+
+        // Step 5: Delete the edited comment
+        cy.get('[data-testid="issue-comment"]')
+            .contains(updatedComment)
+            .parent()
+            .within(() => {
+                cy.contains('Delete').click();
+            });
+
+        // Adding a wait here to ensure the confirmation modal appears
+        cy.get('[data-testid="modal:confirm"]').should('be.visible');
+
+        // Step 6: Confirm the deletion and assert that the comment is removed
+        getDeletionConfirmationModal().within(() => {
+            cy.contains('button', 'Delete comment').click().should('not.exist');
+        });
+
+        // Assert that the comment is no longer visible
+        getIssueDetailsModal().find('[data-testid="issue-comment"]').should('not.contain', updatedComment);
     });
 
     it('Should edit a comment successfully', () => {
         const previousComment = 'An old silent pond...';
-        const comment = 'TEST_COMMENT_EDITED';
+        const comment = 'This comprehensive test continues with Ingas edited comment';
 
         getIssueDetailsModal().within(() => {
             cy.get('[data-testid="issue-comment"]')
@@ -58,6 +100,8 @@ describe('Issue comments creating, editing and deleting', () => {
             .find('[data-testid="issue-comment"]')
             .contains('Delete')
             .click();
+
+        cy.get('[data-testid="modal:confirm"]').should('be.visible');
 
         cy.get('[data-testid="modal:confirm"]')
             .contains('button', 'Delete comment')
